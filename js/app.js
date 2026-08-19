@@ -198,7 +198,7 @@ async function signInWithGoogle() {
         const { error } = await sb.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin,
+                redirectTo: "https://manoug-chouljian.github.io/hayg-dev/",
                 queryParams: {
                     access_type: 'offline',
                     prompt: 'consent',
