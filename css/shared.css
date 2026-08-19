@@ -1,12 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap');
 
 /* --- UNSELECTABLE TEXT & HIDDEN SCROLLBARS GLOBALLY --- */
-html, body {
-    overscroll-behavior: none !important;
-    overscroll-behavior-y: none !important;
-    touch-action: manipulation;
-}
-
 * {
     -webkit-user-select: none !important;
     -moz-user-select: none !important;
@@ -16,8 +10,6 @@ html, body {
     -webkit-tap-highlight-color: transparent !important;
     -ms-overflow-style: none !important;  /* IE & Edge */
     scrollbar-width: none !important;  /* Firefox */
-    overscroll-behavior: none !important;
-    overscroll-behavior-y: none !important;
 }
 
 *::-webkit-scrollbar {

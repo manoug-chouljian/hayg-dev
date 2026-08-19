@@ -28,12 +28,6 @@ body.dark-mode {
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
 }
 
-html, body {
-    overscroll-behavior: none !important;
-    overscroll-behavior-y: none !important;
-    touch-action: manipulation;
-}
-
 * {
     margin: 0;
     padding: 0;
@@ -46,8 +40,6 @@ html, body {
     user-select: none !important;
     -ms-overflow-style: none !important;
     scrollbar-width: none !important;
-    overscroll-behavior: none !important;
-    overscroll-behavior-y: none !important;
 }
 
 *::-webkit-scrollbar {
