@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Random puzzle
         currentPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
-        
+
         // Include main word in total words to find
         currentPuzzle.allWords = [...currentPuzzle.subWords, currentPuzzle.mainWord];
 
@@ -80,9 +80,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         currentWord = "";
         foundWords = [];
         score = 0;
-        
+
         totalWordsCountDisplay.textContent = currentPuzzle.allWords.length;
-        
+
         renderProgressBoard();
         renderLetterRack();
         updateUI();
@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const row = document.createElement("div");
             row.className = "word-row";
             row.dataset.word = word;
-            
+
             for (let i = 0; i < word.length; i++) {
                 const box = document.createElement("div");
                 box.className = "letter-box";
@@ -118,23 +118,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             tile.className = "letter-tile";
             tile.textContent = letter;
             tile.onclick = () => addLetter(letter);
-            
+
             // Touch feedback
             tile.ontouchstart = () => tile.classList.add("key-pressed");
             tile.ontouchend = () => tile.classList.remove("key-pressed");
             tile.ontouchcancel = () => tile.classList.remove("key-pressed");
-            
+
             letterRack.appendChild(tile);
         });
     }
 
     function addLetter(letter) {
         if (!currentPuzzle || currentWord.length >= currentPuzzle.mainWord.length) return;
-        
+
         // Count occurrences in currentWord
         const currentCount = currentWord.split("").filter(l => l === letter).length;
         const maxCount = currentPuzzle.mainWord.split("").filter(l => l === letter).length;
-        
+
         if (currentCount >= maxCount) {
             // Cannot use this letter more times than it appears in mainWord
             showMessage("Տառը սպառած է");
@@ -179,7 +179,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (currentWord === currentPuzzle.mainWord) {
                 wordScore = (currentWord.length * 20) + 50; // Bingo
             }
-            
+
             score += wordScore;
             foundWords.push(currentWord);
 
@@ -188,9 +188,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             updateWordDisplay();
             updateUI();
 
+            // Award XP immediately for the found word
+            if (window.HaygAPI) {
+                window.HaygAPI.updateScore('bee', wordScore);
+            }
+
             checkWinCondition();
         } else {
-            showMessage("Սխալ բառ");
+            showMessage("Այս բառարանին մէջ չկայ");
             currentWord = "";
             updateWordDisplay();
         }
@@ -234,13 +239,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function checkWinCondition() {
         if (foundWords.length === currentPuzzle.allWords.length) {
-            score += 100; // Completion Bonus
+            const completionBonus = 100;
+            score += completionBonus; // Completion Bonus
             updateUI();
             showMessage("Շնորհաւոր, բոլորը գտար!");
-            
-            // Submit total score
+
+            // Submit completion bonus XP
             if (window.HaygAPI) {
-                window.HaygAPI.updateScore('bee', score);
+                window.HaygAPI.updateScore('bee', completionBonus);
             }
 
             setTimeout(() => {
