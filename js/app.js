@@ -36,13 +36,13 @@ function truncateName(name, length = 12) {
 // Calculate effective streak based on last active date using strict UTC to match DB
 function getEffectiveStreak(streakCount, lastActiveDate) {
     if (!lastActiveDate) return 0;
-    
+
     const todayStr = new Date().toISOString().split('T')[0];
     const tDate = new Date(todayStr); // UTC midnight
     const aDate = new Date(lastActiveDate); // UTC midnight
-    
+
     const diffFromActive = Math.round((tDate - aDate) / (1000 * 60 * 60 * 24));
-    
+
     // If last active was more than 1 day ago (e.g. 2 days ago), streak is broken
     if (diffFromActive > 1) return 0;
     return streakCount || 0;
@@ -198,7 +198,7 @@ async function signInWithGoogle() {
         const { error } = await sb.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: "https://manoug-chouljian.github.io/hayg-dev/",
+                redirectTo: 'https://manoug-chouljian.github.io/hayg-dev/',
                 queryParams: {
                     access_type: 'offline',
                     prompt: 'consent',
@@ -395,7 +395,7 @@ function renderPersonalDashboard(data) {
                 // Use strict UTC to match the DB last_active_date format
                 const todayStr = new Date().toISOString().split('T')[0];
                 const dStr = d.toISOString().split('T')[0];
-                
+
                 const tDate = new Date(todayStr);
                 const cDate = new Date(dStr);
                 const aDate = new Date(data.last_active_date);

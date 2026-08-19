@@ -265,6 +265,111 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 2500);
     }
 
+    let accountHints = 3;
+    let revealedIndices = new Set();
+
+    const hintBtn = document.getElementById("wordle-hint-btn");
+    const hintCount = document.getElementById("hint-count");
+
+    async function syncHintsFromAPI() {
+        if (window.HaygAPI && window.HaygAPI.getWordleHints) {
+            accountHints = await window.HaygAPI.getWordleHints();
+        } else {
+            const saved = localStorage.getItem('wordle_hints');
+            accountHints = saved !== null ? parseInt(saved, 10) : 3;
+        }
+        updateHintUI();
+    }
+
+    function updateHintUI() {
+        if (hintCount) hintCount.textContent = accountHints;
+        if (hintBtn) {
+            hintBtn.disabled = accountHints <= 0 || isGameOver || !isGameStarted || isChecking;
+        }
+    }
+
+    async function useHint() {
+        if (!isGameStarted || isGameOver || isChecking || accountHints <= 0) return;
+
+        playClickSound();
+
+        const targetWordArr = targetWord.split("");
+        const knownCorrect = new Set();
+
+        const completedRows = maxGuesses - guessesRemaining;
+        for (let r = 0; r < completedRows; r++) {
+            for (let c = 0; c < wordLength; c++) {
+                const box = document.getElementById(`box-${r}-${c}`);
+                if (box && box.getAttribute("data-state") === "correct") {
+                    knownCorrect.add(c);
+                }
+            }
+        }
+
+        const unrevealedIndices = [];
+        for (let i = 0; i < wordLength; i++) {
+            if (!knownCorrect.has(i) && !revealedIndices.has(i)) {
+                unrevealedIndices.push(i);
+            }
+        }
+
+        if (unrevealedIndices.length > 0) {
+            const randIdx = unrevealedIndices[Math.floor(Math.random() * unrevealedIndices.length)];
+            const correctLetter = targetWordArr[randIdx];
+
+            revealedIndices.add(randIdx);
+
+            if (window.HaygAPI && window.HaygAPI.consumeWordleHint) {
+                accountHints = await window.HaygAPI.consumeWordleHint();
+            } else {
+                accountHints = Math.max(0, accountHints - 1);
+                localStorage.setItem('wordle_hints', accountHints);
+            }
+            updateHintUI();
+
+            updateKeyboardColor(correctLetter, "correct");
+
+            showMessage(`💡 ${randIdx + 1}-րդ տառը «${correctLetter}» է`);
+
+            const currentRow = maxGuesses - guessesRemaining;
+            const hintBox = document.getElementById(`box-${currentRow}-${randIdx}`);
+            if (hintBox) {
+                hintBox.classList.add("pop");
+                hintBox.style.borderColor = "#f59e0b";
+                setTimeout(() => {
+                    if (hintBox) hintBox.style.borderColor = "";
+                }, 1500);
+            }
+        } else {
+            const wrongKeys = allKeys.filter(k => 
+                k !== '⏎' && k !== '⌫' && 
+                !targetWord.includes(k) && 
+                !document.querySelector(`.keyboard-row button[data-key="${k}"][data-state="absent"]`)
+            );
+
+            if (wrongKeys.length > 0) {
+                const toEliminate = wrongKeys.slice(0, 2);
+                toEliminate.forEach(letter => updateKeyboardColor(letter, "absent"));
+
+                if (window.HaygAPI && window.HaygAPI.consumeWordleHint) {
+                    accountHints = await window.HaygAPI.consumeWordleHint();
+                } else {
+                    accountHints = Math.max(0, accountHints - 1);
+                    localStorage.setItem('wordle_hints', accountHints);
+                }
+                updateHintUI();
+
+                showMessage(`💡 ${toEliminate.join(", ")} սխալ տառերը հեռացուեցան`);
+            } else {
+                showMessage("💡 Այլեւս յուշումներ չկան");
+            }
+        }
+    }
+
+    if (hintBtn) {
+        hintBtn.addEventListener("click", useHint);
+    }
+
     function showEndOverlay(msg) {
         const overlayTitle = startOverlay.querySelector("h2");
         if (overlayTitle) overlayTitle.textContent = msg;
@@ -272,6 +377,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (overlayBtn) overlayBtn.textContent = "Նոր Խաղ";
         startOverlay.classList.remove("hidden");
         isGameStarted = false;
+        syncHintsFromAPI();
     }
 
     function resetGame() {
@@ -282,6 +388,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         isGameOver = false;
         isChecking = false;
         targetWord = getNewWord(wordLength);
+        revealedIndices = new Set();
+        syncHintsFromAPI();
         console.log("Target word:", targetWord);
 
         document.querySelectorAll(".keyboard-row button").forEach(btn => {
@@ -304,10 +412,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             resetGame();
             startOverlay.classList.add("hidden");
             isGameStarted = true;
+            updateHintUI();
             e.currentTarget.blur();
         });
     } else {
         isGameStarted = true;
+        updateHintUI();
     }
 
     // Physical keyboard listener
@@ -328,4 +438,5 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     initBoard();
     initKeyboard();
+    syncHintsFromAPI();
 });

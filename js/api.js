@@ -218,6 +218,71 @@ window.HaygAPI = {
                 window.showToast("Ուշադրութիւն. Կը խաղաք որպէս հիւր։ Ձեր նիշերը պիտի չպահուին մինչեւ որ հաշիւ ստեղծէք։", "warning");
             }
         }
+    },
+
+    async getWordleHints() {
+        const DEFAULT_START_HINTS = 3;
+        let currentHints = DEFAULT_START_HINTS;
+        let user = null;
+
+        if (sb_api) {
+            user = await this.getCurrentUser();
+            if (user) {
+                try {
+                    const { data: profile } = await sb_api
+                        .from('profiles')
+                        .select('wordle_hints')
+                        .eq('id', user.id)
+                        .single();
+                    if (profile && profile.wordle_hints !== undefined && profile.wordle_hints !== null) {
+                        currentHints = profile.wordle_hints;
+                    }
+                } catch (e) {
+                    console.error('Error fetching profile hints:', e);
+                }
+            }
+        }
+
+        if (!user) {
+            const savedHints = localStorage.getItem('wordle_hints');
+            currentHints = savedHints !== null ? parseInt(savedHints, 10) : DEFAULT_START_HINTS;
+            localStorage.setItem('wordle_hints', currentHints);
+        }
+
+        return Math.max(0, currentHints);
+    },
+
+    async consumeWordleHint() {
+        let currentHints = await this.getWordleHints();
+        if (currentHints <= 0) return 0;
+
+        currentHints -= 1;
+
+        localStorage.setItem('wordle_hints', currentHints);
+
+        if (sb_api) {
+            const user = await this.getCurrentUser();
+            if (user) {
+                try {
+                    const { data: profile } = await sb_api
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+                    if (profile) {
+                        await sb_api.from('profiles').upsert({
+                            ...profile,
+                            id: user.id,
+                            wordle_hints: currentHints
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error updating consumed hint:', e);
+                }
+            }
+        }
+
+        return Math.max(0, currentHints);
     }
 };
 
