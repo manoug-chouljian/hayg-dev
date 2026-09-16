@@ -250,7 +250,7 @@ function updateUIForUser(user) {
     }
 
     if (heroTitle) heroTitle.innerHTML = `Բարի եկաք,<br><span>${truncatedName}</span>`;
-    if (heroSubtitle) heroSubtitle.innerHTML = `Քու յաջորդ մարտահրաւէրը կը սպասէ քեզ:<br><br><span id="user-stats-display" style="font-weight: 800; color: var(--accent); font-size: 1.5rem;"></span>`;
+    if (heroSubtitle) heroSubtitle.innerHTML = `Պատրա՞ստ ես յաջորդ մարտահրաւէրին:<br><br><span id="user-stats-display" style="font-weight: 800; color: var(--accent); font-size: 1.5rem;"></span>`;
 
     // Fetch user profile stats
     if (sb) {
@@ -438,6 +438,7 @@ function openAuthModal(tab = 'login') {
     authModal.classList.add('show');
     switchTab(tab);
 }
+window.openAuthModal = openAuthModal;
 
 function closeAuthModal() {
     authModal.classList.remove('show');
@@ -929,6 +930,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadLeaderboard();
     initScrollSpy();
     initModalScrollLock();
+
+    // Check URL parameters for auth actions
+    const urlParams = new URLSearchParams(window.location.search);
+    const authAction = urlParams.get('auth');
+    if (authAction === 'signup' || authAction === 'login') {
+        openAuthModal(authAction);
+    }
 
     // Initial reveal check
     window.dispatchEvent(new Event('scroll'));

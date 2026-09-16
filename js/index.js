@@ -124,3 +124,16 @@ document.addEventListener('click', (e) => {
         e.target.closest('button').blur();
     }
 });
+
+// Disable text selection and dragging on non-input elements
+document.addEventListener('selectstart', (e) => {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+    }
+});
+
+document.addEventListener('dragstart', (e) => {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+    }
+});

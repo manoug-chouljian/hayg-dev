@@ -15,6 +15,16 @@ try {
 
 // --- GLOBAL TOAST SYSTEM ---
 window.showToast = function (message, type = 'success', duration = null) {
+    // If streak notification, show the interactive streak overlay animation
+    if (type === 'streak') {
+        const match = typeof message === 'string' ? message.match(/\d+/) : null;
+        const count = match ? parseInt(match[0], 10) : (typeof message === 'number' ? message : 1);
+        if (window.showStreakAnimation) {
+            window.showStreakAnimation(count);
+            return;
+        }
+    }
+
     // Dismiss keyboard on mobile to prevent overlap with toasts
     const nativeInput = document.getElementById('native-keyboard-input');
     if (nativeInput) nativeInput.blur();
@@ -136,10 +146,14 @@ window.HaygAPI = {
                     window.updateDashboardUI(newTotalScore, newStreak);
                 }
 
-                // Show fire animation if this is the first play of the day
+                // Show fire animation overlay if this is the first play of the day
                 if (existingProfile.last_active_date !== today && newStreak > 0) {
                     setTimeout(() => {
-                        window.showToast(`🔥 ${newStreak} Օրուայ Շարք!`, 'streak');
+                        if (window.showStreakAnimation) {
+                            window.showStreakAnimation(newStreak);
+                        } else if (window.showToast) {
+                            window.showToast(`🔥 ${newStreak} Օրուայ Շարք!`, 'streak');
+                        }
                     }, 800);
                 }
 
@@ -150,6 +164,7 @@ window.HaygAPI = {
 
                     // Trigger if the name changed (promotion)
                     if (newRankDetails.current.name !== oldRankDetails.current.name) {
+                        const rankDelay = (existingProfile.last_active_date !== today && newStreak > 0) ? 2800 : 1200;
                         setTimeout(() => {
                             if (window.showRankUpAnimation) {
                                 window.showRankUpAnimation(
@@ -158,7 +173,7 @@ window.HaygAPI = {
                                     newRankDetails.current.color
                                 );
                             }
-                        }, 1200);
+                        }, rankDelay);
                     }
                 }
             }
@@ -214,7 +229,9 @@ window.HaygAPI = {
         if (!sb_api) return;
         const user = await this.getCurrentUser();
         if (!user) {
-            if (window.showToast) {
+            if (window.showGuestOverlay) {
+                window.showGuestOverlay();
+            } else if (window.showToast) {
                 window.showToast("Ուշադրութիւն. Կը խաղաք որպէս հիւր։ Ձեր նիշերը պիտի չպահուին մինչեւ որ հաշիւ ստեղծէք։", "warning");
             }
         }
@@ -349,6 +366,12 @@ window.showRankUpAnimation = function (rankName, emoji, color) {
         console.log('Audio playback exception:', e);
     }
 
+    const dismissOverlay = () => {
+        if (overlay) {
+            overlay.classList.remove('show');
+        }
+    };
+
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'rank-up-overlay';
@@ -360,13 +383,15 @@ window.showRankUpAnimation = function (rankName, emoji, color) {
                 <div class="rank-up-emoji">${emoji}</div>
                 <div class="rank-up-name">${rankName}</div>
                 <div class="rank-up-msg">Շնորհաւոր! Դուք բարձրացաք նոր մակարդակ:</div>
+                <button type="button" class="rank-up-btn" id="rank-up-continue-btn">Շարունակել</button>
             </div>
         `;
         document.body.appendChild(overlay);
 
-        overlay.addEventListener('click', () => {
-            overlay.classList.remove('show');
-        });
+        const continueBtn = overlay.querySelector('#rank-up-continue-btn');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', dismissOverlay);
+        }
     } else {
         overlay.querySelector('.rank-up-emoji').textContent = emoji;
         overlay.querySelector('.rank-up-name').textContent = rankName;
@@ -377,11 +402,6 @@ window.showRankUpAnimation = function (rankName, emoji, color) {
 
     overlay.querySelector('.rank-up-emoji').style.color = color;
     overlay.classList.add('show');
-
-    // Auto hide after 5 seconds
-    setTimeout(() => {
-        overlay.classList.remove('show');
-    }, 6000);
 
     // Simple confetti
     if (window.startConfetti) {
@@ -430,6 +450,194 @@ window.startConfetti = function () {
         requestAnimationFrame(update);
     }
     update();
+};
+
+// --- STREAK OVERLAY & FIRE ANIMATION ---
+window.showStreakAnimation = function (streakCount = 1) {
+    // Dismiss keyboard on mobile
+    const nativeInput = document.getElementById('native-keyboard-input');
+    if (nativeInput) nativeInput.blur();
+    if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+    }
+
+    let overlay = document.getElementById('streak-overlay');
+
+    // Play streak celebration sound
+    try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
+        audio.volume = 0.5;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => console.log('Audio playback failed:', error));
+        }
+    } catch (e) {
+        console.log('Audio playback exception:', e);
+    }
+
+    const dismissOverlay = () => {
+        if (overlay) {
+            overlay.classList.remove('show');
+        }
+    };
+
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'streak-overlay';
+        overlay.className = 'streak-overlay';
+        overlay.innerHTML = `
+            <canvas id="streak-sparks-canvas" class="streak-sparks-canvas"></canvas>
+            <div class="streak-content">
+                <div class="streak-label">ՕՐԱԿԱՆ ՇԱՐՔ</div>
+                <div class="streak-fire-container">
+                    <div class="streak-fire-glow"></div>
+                    <div class="streak-flame-icon">🔥</div>
+                </div>
+                <div class="streak-count-display">
+                    <span class="streak-count-number">${streakCount}</span>
+                    <span class="streak-count-text">Օրուայ Շարք</span>
+                </div>
+                <div class="streak-msg">Շնորհաւոր! Դուք յաջողութեամբ պահպանեցիք ձեր օրական շարքը:</div>
+                <button type="button" class="streak-btn" id="streak-continue-btn">Շարունակել</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const continueBtn = overlay.querySelector('#streak-continue-btn');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', dismissOverlay);
+        }
+    } else {
+        overlay.querySelector('.streak-count-number').textContent = streakCount;
+    }
+
+    // Trigger reflow to ensure CSS transitions happen properly
+    void overlay.offsetWidth;
+    overlay.classList.add('show');
+
+    // Start energetic fire sparks/embers effect
+    if (window.startStreakSparks) {
+        window.startStreakSparks();
+    }
+};
+
+window.startStreakSparks = function () {
+    const canvas = document.getElementById('streak-sparks-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let sparks = [];
+    const sparkColors = ['#ff4500', '#ff7700', '#ffaa00', '#fbbf24', '#ef4444', '#f97316'];
+
+    for (let i = 0; i < 75; i++) {
+        sparks.push({
+            x: Math.random() * canvas.width,
+            y: canvas.height + Math.random() * 200,
+            size: Math.random() * 5 + 2,
+            speedY: Math.random() * 3 + 2,
+            speedX: Math.random() * 2 - 1,
+            color: sparkColors[Math.floor(Math.random() * sparkColors.length)],
+            alpha: Math.random() * 0.7 + 0.3,
+            flicker: Math.random() * 0.05 + 0.02
+        });
+    }
+
+    function update() {
+        const overlayObj = document.getElementById('streak-overlay');
+        if (!overlayObj || !overlayObj.classList.contains('show')) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        sparks.forEach(s => {
+            s.y -= s.speedY;
+            s.x += s.speedX + Math.sin(s.y * 0.02) * 0.5;
+            s.alpha += Math.sin(s.y * 0.1) * s.flicker;
+            const clampedAlpha = Math.max(0.1, Math.min(1, s.alpha));
+
+            ctx.globalAlpha = clampedAlpha;
+            ctx.fillStyle = s.color;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Reset when spark reaches top
+            if (s.y < -20) {
+                s.y = canvas.height + Math.random() * 50;
+                s.x = Math.random() * canvas.width;
+            }
+        });
+        ctx.globalAlpha = 1.0;
+        requestAnimationFrame(update);
+    }
+    update();
+};
+
+// --- GUEST OVERLAY ---
+window.showGuestOverlay = function () {
+    // Dismiss keyboard on mobile
+    const nativeInput = document.getElementById('native-keyboard-input');
+    if (nativeInput) nativeInput.blur();
+    if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+    }
+
+    let overlay = document.getElementById('guest-overlay');
+
+    const dismissOverlay = () => {
+        if (overlay) {
+            overlay.classList.remove('show');
+        }
+    };
+
+    const handleSignup = () => {
+        dismissOverlay();
+        if (typeof window.openAuthModal === 'function') {
+            window.openAuthModal('signup');
+        } else {
+            window.location.href = 'index.html?auth=signup';
+        }
+    };
+
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'guest-overlay';
+        overlay.className = 'guest-overlay';
+        overlay.innerHTML = `
+            <div class="guest-content">
+                <div class="guest-label">ՀԻՒՐԻ ԿԱՐԳԱՎԻՃԱԿ</div>
+                <div class="guest-icon-container">
+                    <div class="guest-icon-glow"></div>
+                    <div class="guest-icon">👤</div>
+                </div>
+                <div class="guest-title">Կը խաղաք որպէս հիւր</div>
+                <div class="guest-msg">Ձեր նիշերը պիտի չպահուին: Ստեղծեցէ՛ք հաշիւ՝ ձեր յառաջդիմութիւնը պահպանելու համար:</div>
+                <div class="guest-actions">
+                    <button type="button" class="guest-signup-btn" id="guest-signup-btn">
+                        <span>Ստեղծել Հաշիւ</span>
+                    </button>
+                    <button type="button" class="guest-continue-btn" id="guest-continue-btn">
+                        <span>Շարունակել որպէս Հիւր</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const signupBtn = overlay.querySelector('#guest-signup-btn');
+        if (signupBtn) {
+            signupBtn.addEventListener('click', handleSignup);
+        }
+
+        const continueBtn = overlay.querySelector('#guest-continue-btn');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', dismissOverlay);
+        }
+    }
+
+    // Trigger reflow
+    void overlay.offsetWidth;
+    overlay.classList.add('show');
 };
 
 // --- SERVICE WORKER REGISTRATION ---

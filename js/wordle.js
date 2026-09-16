@@ -12,11 +12,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             const arr = wordleWords[len];
             return arr[Math.floor(Math.random() * arr.length)].trim();
         }
-        return targetWords[Math.floor(Math.random() * targetWords.length)].trim();
+        if (typeof targetWords !== 'undefined' && targetWords.length > 0) {
+            return targetWords[Math.floor(Math.random() * targetWords.length)].trim();
+        }
+        return "ԱՐՄԱՏ";
     }
 
     let targetWord = getNewWord(wordLength);
-    console.log("Target word:", targetWord); // For debugging
 
     const maxGuesses = 6;
 
@@ -390,7 +392,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         targetWord = getNewWord(wordLength);
         revealedIndices = new Set();
         syncHintsFromAPI();
-        console.log("Target word:", targetWord);
 
         document.querySelectorAll(".keyboard-row button").forEach(btn => {
             btn.removeAttribute("data-state");
