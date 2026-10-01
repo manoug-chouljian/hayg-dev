@@ -317,7 +317,13 @@ window.getRankDetails = function (xp) {
         { name: 'Ադամանդ Գ', xp: 18500, color: '#00f2ff', emoji: '💎' },
         { name: 'Ադամանդ Բ', xp: 24000, color: '#00f2ff', emoji: '💎' },
         { name: 'Ադամանդ Ա', xp: 30000, color: '#00f2ff', emoji: '💎' },
-        { name: 'Իշխան', xp: 40000, color: '#ff00ff', emoji: '👑' }
+        { name: 'Զմրուխտ Գ', xp: 40000, color: '#50c878', emoji: '🟢' },
+        { name: 'Զմրուխտ Բ', xp: 45000, color: '#50c878', emoji: '🟢' },
+        { name: 'Զմրուխտ Ա', xp: 50000, color: '#50c878', emoji: '🟢' },
+        { name: 'Իշխան Գ', xp: 60000, color: '#ff00ff', emoji: '👑' },
+        { name: 'Իշխան Բ', xp: 70000, color: '#ff00ff', emoji: '👑' },
+        { name: 'Իշխան Ա', xp: 80000, color: '#ff00ff', emoji: '👑' },
+        { name: 'Վարպետ', xp: 100000, color: '#ffa200', emoji: '🌟' },
     ];
 
     let currentRank = ranks[0];

@@ -110,8 +110,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         ['է', 'թ', 'փ', 'ձ', 'ջ', 'ր', 'չ', 'ճ', 'ժ', 'ծ'],
         ['ք', 'ո', 'ե', 'ռ', 'տ', 'ը', 'ւ', 'ի', 'օ', 'պ'],
         ['ա', 'ս', 'դ', 'ֆ', 'գ', 'հ', 'յ', 'կ', 'լ'],
-        ['զ', 'խ', 'ց', 'վ', 'բ', 'ն', 'մ', 'շ', 'ղ', '⌫'],
-        ['SPACE']
+        ['զ', 'խ', 'ց', 'վ', 'բ', 'ն', 'մ', 'շ', 'ղ']
     ];
 
     function initKeyboard() {
@@ -121,9 +120,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             rEl.className = 'keyboard-row';
             row.forEach(key => {
                 const btn = document.createElement('button');
-                btn.textContent = key === 'SPACE' ? '␣' : key;
+                btn.textContent = key;
                 btn.dataset.key = key;
-                if (key === 'SPACE' || key === '⌫') btn.classList.add('wide-button');
 
                 btn.addEventListener('touchstart', (e) => {
                     e.preventDefault();
@@ -432,6 +430,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const k = key.toLowerCase();
 
+        if (k === '⌫') {
+            if (targetEnemy && targetIndex > 0) {
+                targetIndex--;
+                score--;
+                combo--;
+                totalKeystrokes--;
+                correctKeystrokes--;
+                updateHUD();
+                updateWordTarget();
+            }
+            return;
+        }
+
         // Find target
         if (!targetEnemy) {
             // Find lowest enemy starting with this letter
@@ -642,16 +653,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (e.ctrlKey || e.altKey || e.metaKey) return;
         if (isPlaying) {
             let k = e.key;
-            if (k === "Backspace") k = "⌫";
-            if (k === " ") {
-                k = "SPACE";
+            if (k === "Backspace") {
                 e.preventDefault();
             }
-            if (k.length === 1 || k === "⌫" || k === "SPACE") {
+            if ((k.length === 1 && k !== " ") || k === "Backspace") {
+                if (k === "Backspace") k = "⌫";
                 handleInput(k);
 
                 // Visual feedback on virtual keyboard
-                const btn = document.querySelector(`.keyboard-row button[data-key="${k === " " ? "SPACE" : k}"]`);
+                const btn = document.querySelector(`.keyboard-row button[data-key="${k}"]`);
                 if (btn) {
                     btn.classList.add('pressed');
                     setTimeout(() => btn.classList.remove('pressed'), 100);

@@ -343,9 +343,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }, 1500);
             }
         } else {
-            const wrongKeys = allKeys.filter(k => 
-                k !== '⏎' && k !== '⌫' && 
-                !targetWord.includes(k) && 
+            const wrongKeys = allKeys.filter(k =>
+                k !== '⏎' && k !== '⌫' &&
+                !targetWord.includes(k) &&
                 !document.querySelector(`.keyboard-row button[data-key="${k}"][data-state="absent"]`)
             );
 

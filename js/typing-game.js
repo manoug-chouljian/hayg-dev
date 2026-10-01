@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const finalWpm = wpmDisplay.textContent;
         const finalAcc = accuracyDisplay.textContent;
-        const scoreEarned = correctKeystrokes;
+        const scoreEarned = correctKeystrokes * 2;
 
         if (window.HaygAPI) window.HaygAPI.updateScore('typing', scoreEarned);
 
@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Dynamic title
         const resultTitle = document.querySelector("#typing-result-overlay h2");
         if (resultTitle) {
-            resultTitle.innerHTML = `${timer > 0 ? "Ամբողջացուցիք" : "Ժամանակը սպառուեցաւ"}`;
+            resultTitle.innerHTML = `${timer > 0 ? "Ամբողջացուցիք" : "Ժամանակը սպառեցաւ"}`;
         }
 
         document.getElementById("typing-result-overlay").classList.remove("hidden");
